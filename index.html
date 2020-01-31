@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+<canvas id="canvas" style="border: 1px solid"></canvas>
+<script type="text/javascript">
+  const state = {
+    p1: {
+      x: 10,
+      y: 40,
+      sx: 10,
+      sy: 60,
+      speedX: 10,
+      color: 'green',
+      keys: {
+        up: 'w',
+        down: 's',
+      },
+      score: 0
+    },
+    p2: {
+      x: 280,
+      y: 40,
+      sx: 10,
+      sy: 60,
+      speedX: 10,
+      color: 'brown',
+      keys: {
+        up: 'o',
+        down: 'l',
+      },
+      score: 0
+    },
+    ball: {
+      x: 140,
+      y: 70,
+      sx: 10,
+      sy: 10,
+      speedX: 1,
+      speedY: 0,
+      color: 'red',
+    },
+    collitions: {
+      p1: true,
+      p2: false,
+    }
+  };
+
+  const moveObject = (e, obj) => {
+    if (Object.keys(obj.keys).map(k => obj.keys[k]).includes(e.key)) {
+      ctx.clearRect(obj.x, obj.y, obj.sx, obj.sy);
+      if (e.key === obj.keys.up) {
+        obj.y -= obj.speedX
+      }
+
+      if (e.key === obj.keys.down) {
+        obj.y += obj.speedX
+      }
+    }
+  }
+
+  document.body.addEventListener('keypress', e => {
+    [state.p1, state.p2].forEach(obj => {
+      moveObject(e, obj);
+    })
+
+    if (e.key === 'q') {
+      state.ball.speedX++
+    }
+  })
+
+  const ctx = canvas.getContext('2d');
+  window.ctx = ctx
+
+  const render = objs => {
+    objs.forEach(obj => {
+
+      ctx.fillStyle = obj.color;
+      ctx.fillRect(obj.x, obj.y, obj.sx, obj.sy)
+    })
+  }
+
+  const detectp1XCollition = (ball, p1) => ball.x <= (p1.x + p1.sx)
+
+  const detectp2XCollition = (ball, p2) => (ball.x + ball.sx) >= p2.x
+
+  const detectYCollition = (ball, p) => (p.y <= ball.y && ball.y <= p.y + p.sy);
+
+  const detectPlayerCollitions = ball => {
+    const p1Touched = detectp1XCollition(ball, state.p1) && detectYCollition(ball, state.p1);
+    const p2Touched = detectp2XCollition(ball, state.p2) && detectYCollition(ball, state.p2);
+
+    if (p1Touched) {
+      ball.speedX = -ball.speedX
+      const speedY = (0.5 - (((ball.y - state.p1.y)) / (state.p1.sy))) * 2
+      ball.speedY = speedY
+    }
+
+    if (p2Touched) {
+      ball.speedX = -ball.speedX
+      const speedY = (0.5 - (((ball.y - state.p2.y)) / (state.p2.sy))) * 2
+      ball.speedY = speedY
+    }
+  };
+
+  const detectBoundaryCollitions = ball => {
+    if (ball.x <= 0) {
+      ball.speedX = -ball.speedX
+      state.p2.score++
+    }
+
+    if ((ball.x + ball.sx) >= canvas.width) {
+      ball.speedX = -ball.speedX
+      state.p1.score++
+    }
+
+    if (ball.y <= 0) {
+      ball.speedY = -ball.speedY
+    }
+
+    if ((ball.y + ball.sy) >= canvas.height) {
+      ball.speedY = -ball.speedY
+    }
+  }
+
+  const moveBall = ball => {
+    ball.x += ball.speedX
+    ball.y += ball.speedY
+  }
+
+  setInterval(() => {
+    window.requestAnimationFrame(() => {
+      ctx.clearRect(0, 0, 300, 150);
+      ctx.fillText(state.p1.score + ' : ' + state.p2.score, 150, 10)
+
+      ctx.clearRect(state.ball.x, state.ball.y, state.ball.sx, state.ball.sy);
+      detectBoundaryCollitions(state.ball);
+      detectPlayerCollitions(state.ball);
+      moveBall(state.ball);
+      render([state.p1, state.p2, state.ball]);
+
+    });
+  })
+
+</script>
+</body>
+</html>
